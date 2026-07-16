@@ -54,6 +54,8 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
+    flex-wrap:wrap;
+    row-gap:14px;
     gap:24px;
     position:relative;
     z-index:2;
@@ -62,7 +64,10 @@
     display:flex;
     align-items:center;
     gap:14px;
+    min-width:0;
+    flex:1 1 240px;
   }
+  .title-block{min-width:0;}
   .brandmark .badge{
     background:#fff;
     color:var(--tvs-red);
@@ -490,6 +495,10 @@
   @media (max-width:1000px){
     .kpi-row{grid-template-columns:repeat(2,1fr);}
     .masthead{padding:22px 20px 0;}
+    .brandmark .title-block h1{font-size:19px; line-height:1.2;}
+    .brandmark .title-block p{font-size:11.5px;}
+    .tvs-logo{height:42px; padding:6px 10px;}
+    .header-actions{justify-content:flex-start; width:100%;}
     .wrap{padding:0 16px 40px;}
     table{font-size:12.5px;}
     footer{min-height:auto; flex-direction:column; text-align:center; padding:28px 24px;}
@@ -671,7 +680,7 @@
     <div class="copyright">© 2026 Jeremy Baraka — D&amp;AI</div>
   </div>
   <div class="bike-wrap">
-    <img src="rr310.jpg" alt="TVS Apache RR 310" class="footer-bike">
+    <img src="rr310.JPG" alt="TVS Apache RR 310" class="footer-bike">
   </div>
 </footer>
 
