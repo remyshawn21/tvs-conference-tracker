@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TVS Distributor & Dealer Conference — Trip Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tvs-blue:#1F4296;
+    --tvs-blue-dark:#143074;
+    --tvs-red:#E31E24;
+    --tvs-red-dark:#B3151A;
+    --tvs-red-tint:#FDECEC;
+    --ink:#1B1B1F;
+    --ink-soft:#5B5B63;
+    --paper:#FFFFFF;
+    --cloud:#F6F5F4;
+    --line:#E7E5E3;
+    --good:#1E8E5A;
+    --good-tint:#E8F6EF;
+    --warn:#C77A00;
+    --warn-tint:#FCF1DF;
+    --bad:#C4281C;
+    --bad-tint:#FBEAE8;
+    --font-display:'Barlow Condensed', sans-serif;
+    --font-body:'Barlow', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--cloud);
+    font-family:var(--font-body);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  /* ---------- HEADER / SIGNATURE ---------- */
+  .masthead{
+    position:relative;
+    background:linear-gradient(135deg,var(--tvs-blue-dark) 0%,var(--tvs-blue) 45%,var(--tvs-red) 100%);
+    color:#fff;
+    padding:28px 40px 0;
+    overflow:hidden;
+  }
+
+.tvs-logo{height:58px;width:auto;display:block;background:#fff;padding:8px 14px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.15);}
+.masthead::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.04),rgba(255,255,255,.04) 2px,transparent 2px,transparent 14px);pointer-events:none;}
+
+  .masthead-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    position:relative;
+    z-index:2;
+  }
+  .brandmark{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .brandmark .badge{
+    background:#fff;
+    color:var(--tvs-red);
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:26px;
+    letter-spacing:1px;
+    padding:6px 14px 4px;
+    border-radius:6px;
+    line-height:1;
+  }
+  .brandmark .title-block h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:28px;
+    letter-spacing:0.3px;
+    margin:0 0 2px;
+    text-transform:uppercase;
+  }
+  .brandmark .title-block p{
+    margin:0;
+    font-size:13.5px;
+    color:rgba(255,255,255,0.85);
+    font-weight:500;
+  }
+  .updated-chip{
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.35);
+    border-radius:999px;
+    padding:8px 16px;
+    font-size:12.5px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .updated-chip span{opacity:0.8; font-weight:500;}
+  .header-actions{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
+  .status-chip{
+    display:flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.35);
+    border-radius:999px; padding:8px 14px 8px 12px;
+    font-size:12.5px; font-weight:600; white-space:nowrap;
+  }
+  .status-chip .dot{width:7px; height:7px; border-radius:50%; background:#3DDC84;}
+  .status-chip.live .dot{animation:pulse 1.8s infinite;}
+  .status-chip.syncing .dot{background:#FFD166;}
+  .status-chip.error .dot{background:#FF6B6B;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+  .refresh-btn{
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.35);
+    color:#fff; border-radius:999px; padding:8px 16px;
+    font-family:var(--font-body); font-size:12.5px; font-weight:600;
+    cursor:pointer; white-space:nowrap; transition:background 0.15s;
+  }
+  .refresh-btn:hover{background:rgba(255,255,255,0.26);}
+  .refresh-btn:active{transform:scale(0.97);}
+  .sync-error{
+    position:relative; z-index:2; margin-top:14px;
+    background:rgba(196,40,28,0.18); border:1px solid rgba(255,255,255,0.4);
+    color:#fff; font-size:12.5px; padding:10px 14px; border-radius:10px;
+  }
+
+  /* flight path signature */
+  .routeway{
+    position:relative;
+    margin-top:22px;
+    height:78px;
+  }
+  .routeway svg{width:100%; height:100%; display:block;}
+  .route-line{
+    fill:none;
+    stroke:rgba(255,255,255,0.45);
+    stroke-width:2;
+    stroke-dasharray:1 10;
+    stroke-linecap:round;
+  }
+  .route-node{fill:#fff;}
+  .route-node-ring{fill:none; stroke:rgba(255,255,255,0.55); stroke-width:1.5;}
+  .plane-icon{fill:#fff;}
+  @keyframes fly{
+    0%{ offset-distance:0%; }
+    100%{ offset-distance:100%; }
+  }
+  .plane-mover{
+    offset-path: path('M4,50 C 120,4 260,96 400,50 S 680,4 800,50 S 1080,96 1196,50');
+    animation: fly 9s linear infinite;
+  }
+  .masthead-fade{
+    height:22px;
+    background:var(--cloud);
+    border-radius:22px 22px 0 0;
+    margin-top:10px;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{max-width:1240px; margin:0 auto; padding:0 40px 60px;}
+  .section-label{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--tvs-red-dark);
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-label .rule{flex:1; height:1px; background:var(--line);}
+
+  /* ---------- KPI CARDS ---------- */
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(170px,1fr));
+    gap:16px;
+    margin:-30px 0 36px;
+    position:relative;
+    z-index:3;
+  }
+  .kpi-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 18px 16px;
+    box-shadow:0 10px 24px -18px rgba(0,0,0,0.35);
+  }
+  .kpi-card .kpi-icon{
+    width:30px; height:30px;
+    margin-bottom:10px;
+  }
+  .kpi-card .kpi-value{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:32px;
+    line-height:1;
+    letter-spacing:0.2px;
+  }
+  .kpi-card .kpi-label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-top:6px;
+  }
+  .kpi-card .kpi-sub{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .kpi-card.accent{background:var(--tvs-red); color:#fff;}
+  .kpi-card.accent .kpi-label,.kpi-card.accent .kpi-sub{color:rgba(255,255,255,0.85);}
+
+  /* ---------- COUNTRY TABLE ---------- */
+  .panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:36px;
+  }
+  .panel-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .panel-head h2{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    margin:0;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+  }
+  .panel-note{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px;}
+
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:700;
+    padding:0 10px 10px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:10px 10px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--cloud);}
+  .country-cell{font-weight:700;}
+  .num{text-align:center; font-variant-numeric:tabular-nums;}
+
+  .bar-track{
+    width:100px;
+    height:7px;
+    background:var(--line);
+    border-radius:99px;
+    overflow:hidden;
+    display:inline-block;
+    vertical-align:middle;
+    margin-right:8px;
+  }
+  .bar-fill{height:100%; border-radius:99px;}
+  .bar-fill.good{background:var(--good);}
+  .bar-fill.warn{background:var(--warn);}
+  .bar-fill.bad{background:var(--bad);}
+  .bar-wrap{display:flex; align-items:center;}
+  .bar-pct{font-size:12px; font-weight:700; width:36px; text-align:right;}
+
+  .flag{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--warn-tint);
+    color:var(--warn);
+    font-size:11px;
+    font-weight:800;
+    margin-left:6px;
+    cursor:help;
+  }
+
+  .status-pill{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:11.5px;
+    font-weight:700;
+  }
+  .status-pill.good{background:var(--good-tint); color:var(--good);}
+  .status-pill.warn{background:var(--warn-tint); color:var(--warn);}
+  .status-pill.bad{background:var(--bad-tint); color:var(--bad);}
+  .status-pill.neutral{background:var(--cloud); color:var(--ink-soft);}
+
+  /* ---------- ATTENDEE SECTION ---------- */
+  .sample-banner{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    background:var(--tvs-red-tint);
+    border:1px solid #F6C7C8;
+    color:var(--tvs-red-dark);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:12.5px;
+    margin-bottom:18px;
+    line-height:1.5;
+  }
+  .filter-bar{
+    display:flex;
+    gap:10px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .filter-bar select,.filter-bar input{
+    font-family:var(--font-body);
+    font-size:13px;
+    padding:8px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+  }
+  .filter-bar input{flex:1; min-width:180px;}
+
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:3px 9px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+  }
+  .chip.good{background:var(--good-tint); color:var(--good);}
+  .chip.warn{background:var(--warn-tint); color:var(--warn);}
+  .chip.bad{background:var(--bad-tint); color:var(--bad);}
+  .chip.neutral{background:var(--cloud); color:var(--ink-soft);}
+  .role-tag{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .avatar{
+    width:28px; height:28px;
+    border-radius:50%;
+    background:var(--tvs-red);
+    color:#fff;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:700;
+    margin-right:8px;
+  }
+  .name-cell{display:flex; align-items:center;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    position:relative;
+    margin-top:44px;
+    min-height:240px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    text-align:center;
+    padding:34px 20px 26px;
+    overflow:hidden;
+    background:#0B1428 url('rr310.jpg') center 38% / cover no-repeat;
+  }
+  footer::before{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      linear-gradient(180deg, rgba(9,16,33,0.10) 0%, rgba(9,16,33,0.55) 58%, rgba(9,16,33,0.94) 100%),
+      linear-gradient(100deg, rgba(9,16,33,0.75) 0%, rgba(9,16,33,0.15) 42%, rgba(196,40,28,0.20) 100%);
+  }
+  footer::after{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg,var(--tvs-blue-dark),var(--tvs-blue),var(--tvs-red));
+  }
+  footer .footer-inner{
+    position:relative; z-index:1;
+    color:#F2F4F9;
+    font-size:12.5px;
+    max-width:640px;
+  }
+  footer .footer-tag{
+    font-size:10.5px; letter-spacing:2px; text-transform:uppercase;
+    color:#FFB4B4; margin-bottom:8px; font-weight:600;
+  }
+  footer .footer-line{
+    font-size:13px; color:#F2F4F9; opacity:0.92;
+  }
+  footer .copyright{
+    margin-top:12px;
+    font-size:10.5px;
+    letter-spacing:0.3px;
+    color:#F2F4F9;
+    opacity:0.6;
+  }
+
+  @media (max-width:1000px){
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .masthead{padding:22px 20px 0;}
+    .wrap{padding:0 16px 40px;}
+    table{font-size:12.5px;}
+    footer{min-height:180px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-top">
+    <div class="brandmark">
+      <img src="TVS_Motor_Company_Logo.png" alt="TVS Motor" class="tvs-logo">
+      <div class="title-block">
+        <h1>Distributor &amp; Dealer Conference</h1>
+        <p>Trip Tracker — Attendees, Flights &amp; Visas</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="status-chip syncing" id="syncStatus"><span class="dot"></span><span id="syncStatusText">Connecting</span></div>
+      <div class="updated-chip"><span>Last refreshed:</span> <span id="lastUpdated">—</span></div>
+      <button class="refresh-btn" id="refreshBtn" type="button">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="sync-error" id="syncError" style="display:none;"></div>
+
+  <!-- signature: flight route with plane, country nodes along the way -->
+  <div class="routeway">
+    <svg viewBox="0 0 1200 100" preserveAspectRatio="none">
+      <path class="route-line" d="M4,50 C 120,4 260,96 400,50 S 680,4 800,50 S 1080,96 1196,50"></path>
+      <g id="routeNodes"></g>
+      <g class="plane-mover">
+        <path class="plane-icon" transform="translate(-11,-9) scale(0.9)" d="M22 2 L14 9 L3 6 L1 8 L10 13 L6 17 L2 17 L1 19 L5 21 L7 25 L9 24 L9 20 L13 16 L18 25 L20 23 L17 12 L24 4 Z"/>
+      </g>
+    </svg>
+  </div>
+  <div class="masthead-fade"></div>
+</header>
+
+<div class="wrap">
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- COUNTRY SUMMARY -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Country Summary</h2>
+    </div>
+    <p class="panel-note">Flight &amp; visa completion measured against each country's total attendee count. Bars cap visually at 100%; a flag means the raw source figure exceeds the attendee total and is worth double-checking.</p>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Country</th>
+          <th class="num">Distributor</th>
+          <th class="num">Dealer</th>
+          <th class="num">RF/Other</th>
+          <th class="num">Total</th>
+          <th>Flights Booked</th>
+          <th class="num">Visas Applied</th>
+          <th>Visa Readiness</th>
+          <th class="num">Visas Rejected</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="countryBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ATTENDEE LIST -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Attendee List</h2>
+    </div>
+    <div class="sample-banner">
+  <div>
+    <strong>Live data.</strong>
+    Dashboard is reading directly from the conference tracker workbook.
+  </div>
+</div>
+    <div class="filter-bar">
+      <input type="text" id="searchBox" placeholder="Search name, company or country…">
+      <select id="countryFilter"><option value="">All countries</option></select>
+      <select id="visaFilter">
+        <option value="">All visa statuses</option>
+        <option value="Granted">Granted</option>
+        <option value="Applied">Applied</option>
+        <option value="Not Applied">Not Applied</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <select id="flightFilter">
+        <option value="">All flight statuses</option>
+        <option value="Booked">Booked</option>
+        <option value="Not Booked">Not Booked</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Attendee</th>
+          <th>Country</th>
+          <th>Company / Dealer</th>
+          <th>Role</th>
+          <th>Visa Status</th>
+          <th>Flight Status</th>
+          <th>Flight Date</th>
+        </tr>
+      </thead>
+      <tbody id="attendeeBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- PLANNING CHECKLIST -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Planning Checklist</h2>
+    </div>
+    <div class="kpi-row" id="checklistKpiRow" style="margin-bottom:18px;"></div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Owner</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="checklistBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-tag">Apache RR 310 · Race Blue</div>
+    <div class="footer-line">TVS Motor Distributor &amp; Dealer Conference — internal trip tracker. View only.</div>
+    <div class="copyright">© 2026 Jeremy Baraka — D&amp;AI</div>
+  </div>
+</footer>
+
+<script>
+/* =========================================================================
+   DATA — edit these two arrays and refresh the page to update the dashboard.
+   ========================================================================= */
+
+
+let COUNTRY_DATA=[];
+let ATTENDEES=[];
+let CHECKLIST=[];
+
+/* ------------------------------------------------------------------------
+   SOURCE — Google Sheet, shared as "Anyone with the link — Viewer".
+   Loaded via gviz's script-tag (JSONP) mode, NOT fetch() — Google's gviz
+   endpoint doesn't send CORS headers, so fetch() always fails here no
+   matter how the sheet is shared. A <script src> tag isn't subject to
+   CORS, which is how this sidesteps the problem entirely.
+   ------------------------------------------------------------------------ */
+const SHEET_ID = '1pejTpcjDU_5QSYT-h7aZFNkBc52x_UR0v5Ydw-t1B5g';
+const SUMMARY_TAB = 'Sheet1';
+const ATTENDEES_TAB = 'Attendees';
+const CHECKLIST_TAB = 'Checklist';
+const REFRESH_MS = 30000;
+
+function gvizUrl(sheetName, callbackName, headerRows){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName};reqId:0&sheet=${encodeURIComponent(sheetName)}&headers=${headerRows}`;
+}
+
+function loadGvizJSONP(sheetName, headerRows, timeoutMs=15000){
+  return new Promise((resolve, reject)=>{
+    const cbName = 'gviz_' + Math.random().toString(36).slice(2);
+    let settled = false;
+    const scriptEl = document.createElement('script');
+    const cleanup = ()=>{
+      delete window[cbName];
+      if(scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+      clearTimeout(timer);
+    };
+    const timer = setTimeout(()=>{
+      if(settled) return; settled = true;
+      cleanup();
+      reject(new Error(`Timed out loading "${sheetName}" tab — check the sheet is shared as "Anyone with the link"`));
+    }, timeoutMs);
+    window[cbName] = (response)=>{
+      if(settled) return; settled = true;
+      cleanup();
+      if(!response || response.status === 'error'){
+        const msg = response && response.errors && response.errors[0] ? response.errors[0].detailed_message : 'Unknown error from Google Sheets';
+        reject(new Error(`"${sheetName}" tab: ${msg}`));
+        return;
+      }
+      resolve(response);
+    };
+    scriptEl.onerror = ()=>{
+      if(settled) return; settled = true;
+      cleanup();
+      reject(new Error(`Couldn't reach "${sheetName}" tab — check your internet connection or the sheet's sharing setting`));
+    };
+    scriptEl.src = gvizUrl(sheetName, cbName, headerRows);
+    document.head.appendChild(scriptEl);
+  });
+}
+
+function gvizRowsAsArrays(response){
+  return (response.table.rows||[]).map(row => (row.c||[]).map(cell => (cell && cell.v!=null) ? cell.v : ''));
+}
+const GVIZ_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function gvizCellText(cell){
+  if(!cell) return '';
+  if(cell.v!=null && typeof cell.v === 'string'){
+    const m = cell.v.match(/^Date\((\d+),(\d+),(\d+)/);
+    if(m){
+      const y=+m[1], mo=+m[2], d=+m[3]; // gviz month is 0-indexed, like JS Date
+      return `${String(d).padStart(2,'0')} ${GVIZ_MONTHS[mo]||''} ${y}`;
+    }
+  }
+  if(cell.f!=null) return cell.f;
+  return cell.v!=null ? cell.v : '';
+}
+function gvizRowsAsObjects(response){
+  const labels = (response.table.cols||[]).map(c => c.label);
+  return (response.table.rows||[]).map(row=>{
+    const obj = {};
+    (row.c||[]).forEach((cell,i)=>{ obj[labels[i]] = gvizCellText(cell); });
+    return obj;
+  });
+}
+
+async function loadExcelData(){
+ const [summaryResp, attendeesResp, checklistResp] = await Promise.all([
+   loadGvizJSONP(SUMMARY_TAB, 0),
+   loadGvizJSONP(ATTENDEES_TAB, 1),
+   loadGvizJSONP(CHECKLIST_TAB, 1).catch(err=>{ console.warn('Checklist tab:', err.message); return null; })
+ ]);
+
+ ATTENDEES = gvizRowsAsObjects(attendeesResp).map(r=>({
+   name:r['Name']||'',
+   country:r['Country']||'',
+   company:r['Company']||'',
+   role:r['Role']||'',
+   visa:r['Visa Status']||'',
+   flight:r['Flight Status']||'',
+   flightDate:r['Flight Date']||''
+ }));
+
+ CHECKLIST = checklistResp ? gvizRowsAsObjects(checklistResp).map(r=>({
+   item: r['Item']||'',
+   owner: r['Owner']||'',
+   status: r['Status']||''
+ })).filter(r=>r.item) : [];
+
+ const rows = gvizRowsAsArrays(summaryResp);
+ COUNTRY_DATA=[];
+ for(let i=2;i<rows.length;i++){
+   const r = rows[i];
+   if(!r || !r[0]) continue;
+
+   const distributor = Number(r[1]) || 0;
+   const dealer      = Number(r[2]) || 0;
+   const rf          = Number(r[3]) || 0;
+   const sheetTotal   = r[4]!==undefined && String(r[4]).trim()!=='' ? Number(r[4]) : NaN;
+
+   COUNTRY_DATA.push({
+      country: String(r[0]).trim(),
+      distributor,
+      dealer,
+      rf,
+
+      total: !isNaN(sheetTotal) ? sheetTotal : (distributor + dealer + rf),
+
+      flightsBooked: Number(r[5]) || 0,
+      visaApplied:   Number(r[6]) || 0,
+      visaGranted:   Number(r[7]) || 0,
+      visaRejected:  Number(r[8]) || 0
+   });
+ }
+}
+
+/* ========================================================================= */
+
+function initials(name){
+  return name.split(" ").map(p=>p[0]).slice(0,2).join("").toUpperCase();
+}
+function pct(n,d){ if(!d) return 0; return Math.round((n/d)*100); }
+function tone(p){
+  if(p > 70) return "good";
+  if(p >= 40) return "warn";
+  return "bad";
+}
+
+function renderKPIs(){
+ const totalAttendees =
+  COUNTRY_DATA.reduce((s,c)=>s+c.total,0);
+
+const totalFlights =
+  COUNTRY_DATA.reduce((s,c)=>s+c.flightsBooked,0);
+
+const totalVisaA =
+  COUNTRY_DATA.reduce((s,c)=>s+c.visaApplied,0);
+
+const totalVisaG =
+  COUNTRY_DATA.reduce((s,c)=>s+c.visaGranted,0);
+
+const totalVisaR =
+  COUNTRY_DATA.reduce((s,c)=>s+c.visaRejected,0);
+
+const countries =
+  COUNTRY_DATA.length;
+
+const overallReadiness =
+  Math.round(
+    COUNTRY_DATA.reduce((sum,c)=>{
+
+      const flightPct =
+        c.total > 0
+          ? Math.min(100,(c.flightsBooked/c.total)*100)
+          : 0;
+
+      const visaPct =
+        c.total > 0
+          ? Math.min(100,(c.visaGranted/c.total)*100)
+          : 0;
+
+      return sum + ((flightPct + visaPct)/2);
+
+    },0) / countries
+  );
+
+const flightReadiness =
+  pct(Math.min(totalFlights,totalAttendees), totalAttendees);
+
+const visaReadiness =
+  pct(Math.min(totalVisaG,totalAttendees), totalAttendees);
+
+  const cards = [
+    { label:"Total Attendees", value:totalAttendees, sub:countries+" countries & teams", accent:true },
+    { label:"Flights Booked",  value:totalFlights,   sub:flightReadiness+"% of attendees covered" },
+    { label:"Visas Applied",   value:totalVisaA,      sub:"submitted for processing" },
+    { label:"Visas Granted",   value:totalVisaG,      sub:visaReadiness+"% of attendees covered" },
+    { label:"Visas Rejected/Delayed", value:totalVisaR, sub:"across all countries" },
+    {
+  label:"Overall Readiness",
+  value: overallReadiness + "%",
+  sub:"average country readiness"
+},
+  ];
+  document.getElementById("kpiRow").innerHTML = cards.map(c=>`
+    <div class="kpi-card ${c.accent?"accent":""}">
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>`).join("");
+}
+
+function renderRouteNodes(){
+  const n = COUNTRY_DATA.length;
+  const pathEl = document.querySelector(".route-line");
+  const totalLen = pathEl.getTotalLength();
+  const g = document.getElementById("routeNodes");
+  let html = "";
+  for(let i=0;i<n;i++){
+    const dist = (i/(n-1)) * totalLen;
+    const pt = pathEl.getPointAtLength(dist);
+    html += `<circle class="route-node-ring" cx="${pt.x}" cy="${pt.y}" r="5"></circle>
+             <circle class="route-node" cx="${pt.x}" cy="${pt.y}" r="2.4"></circle>`;
+  }
+  g.innerHTML = html;
+}
+
+function renderCountryTable(){
+
+  const rows = COUNTRY_DATA.map(c=>{
+
+    const flightPct =
+      c.total > 0
+        ? Math.min(100, Math.round((c.flightsBooked / c.total) * 100))
+        : 0;
+
+    const visaPct =
+      c.total > 0
+        ? Math.min(100, Math.round((c.visaGranted / c.total) * 100))
+        : 0;
+
+    const readinessPct =
+      Math.round((flightPct + visaPct) / 2);
+
+    const statusTone = tone(readinessPct);
+
+    const statusLabel =
+      readinessPct < 40
+        ? "Behind"
+        : readinessPct <= 70
+          ? "In Progress"
+          : "On Track";
+
+    const hasIssue =
+      c.flightsBooked > c.total ||
+      c.visaGranted > c.total ||
+      c.visaRejected > c.total;
+
+    return `
+      <tr>
+        <td class="country-cell">
+          ${c.country}
+          ${hasIssue
+            ? `<span class="flag"
+                     title="One or more source values exceed attendee totals.">
+                     ⚠
+               </span>`
+            : ``}
+        </td>
+
+        <td class="num">${c.distributor || "–"}</td>
+        <td class="num">${c.dealer || "–"}</td>
+        <td class="num">${c.rf || "–"}</td>
+
+        <td class="num">
+          <strong>${c.total}</strong>
+        </td>
+
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-track">
+              <div class="bar-fill ${tone(flightPct)}"
+                   style="width:${flightPct}%"></div>
+            </div>
+            <span class="bar-pct">${flightPct}%</span>
+          </div>
+        </td>
+
+        <td class="num">${c.visaApplied || "–"}</td>
+
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-track">
+              <div class="bar-fill ${tone(visaPct)}"
+                   style="width:${visaPct}%"></div>
+            </div>
+            <span class="bar-pct">${visaPct}%</span>
+          </div>
+        </td>
+
+        <td class="num">${c.visaRejected || 0}</td>
+
+        <td>
+          <span class="status-pill ${statusTone}">
+            ${statusLabel}
+          </span>
+        </td>
+      </tr>`;
+  }).join("");
+
+  document.getElementById("countryBody").innerHTML = rows;
+}
+
+function visaChipTone(v){
+  if(v==="Granted") return "good";
+  if(v==="Applied") return "warn";
+  if(v==="Rejected") return "bad";
+  return "neutral";
+}
+function flightChipTone(v){
+  return v==="Booked" ? "good" : "neutral";
+}
+
+function renderAttendeeFilters(){
+  const sel = document.getElementById("countryFilter");
+  const countries = [...new Set(ATTENDEES.map(a=>a.country))].sort();
+  sel.innerHTML = `<option value="">All countries</option>` + countries.map(c=>`<option value="${c}">${c}</option>`).join("");
+}
+
+function renderAttendeeTable(){
+  const search = document.getElementById("searchBox").value.toLowerCase();
+  const countryF = document.getElementById("countryFilter").value;
+  const visaF = document.getElementById("visaFilter").value;
+  const flightF = document.getElementById("flightFilter").value;
+
+  const filtered = ATTENDEES.filter(a=>{
+    const matchesSearch = !search || (a.name+a.company+a.country).toLowerCase().includes(search);
+    const matchesCountry = !countryF || a.country===countryF;
+    const matchesVisa = !visaF || a.visa===visaF;
+    const matchesFlight = !flightF || a.flight===flightF;
+    return matchesSearch && matchesCountry && matchesVisa && matchesFlight;
+  });
+
+  document.getElementById("attendeeBody").innerHTML = filtered.map(a=>`
+    <tr>
+      <td><div class="name-cell"><span class="avatar">${initials(a.name)}</span>${a.name}</div></td>
+      <td>${a.country}</td>
+      <td>${a.company}</td>
+      <td><span class="role-tag">${a.role}</span></td>
+      <td><span class="chip ${visaChipTone(a.visa)}">${a.visa}</span></td>
+      <td><span class="chip ${flightChipTone(a.flight)}">${a.flight}</span></td>
+      <td>${a.flightDate||"–"}</td>
+    </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:24px;">No attendees match those filters.</td></tr>`;
+}
+
+function checklistStatusTone(v){
+  const s = (v||"").trim().toLowerCase();
+  if(s==="done" || s==="complete" || s==="completed") return "good";
+  if(s==="pending" || s==="in progress" || s==="not started") return "warn";
+  if(s==="blocked" || s==="cancelled" || s==="at risk") return "bad";
+  return "neutral";
+}
+
+function renderChecklist(){
+  const total = CHECKLIST.length;
+  const done = CHECKLIST.filter(c=>checklistStatusTone(c.status)==="good").length;
+  const pending = CHECKLIST.filter(c=>checklistStatusTone(c.status)==="warn").length;
+  const blocked = CHECKLIST.filter(c=>checklistStatusTone(c.status)==="bad").length;
+  const donePct = pct(done, total);
+
+  const cards = [
+    { label:"Checklist Items", value:total, sub:"tracked across owners", accent:true },
+    { label:"Done", value:done, sub:donePct+"% complete" },
+    { label:"Pending", value:pending, sub:"still open" },
+    { label:"Blocked / At Risk", value:blocked, sub:"needs attention" },
+  ];
+  document.getElementById("checklistKpiRow").innerHTML = cards.map(c=>`
+    <div class="kpi-card ${c.accent?"accent":""}">
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>`).join("");
+
+  document.getElementById("checklistBody").innerHTML = CHECKLIST.map(c=>`
+    <tr>
+      <td>${c.item}</td>
+      <td>${c.owner||"–"}</td>
+      <td><span class="status-pill ${checklistStatusTone(c.status)}">${c.status||"–"}</span></td>
+    </tr>`).join("") || `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:24px;">No checklist items found.</td></tr>`;
+}
+
+function setSyncStatus(mode, text){
+  const chip = document.getElementById("syncStatus");
+  chip.className = "status-chip " + mode;
+  document.getElementById("syncStatusText").textContent = text;
+}
+
+function showSyncError(msg){
+  const box = document.getElementById("syncError");
+  if(msg){
+    box.style.display = "block";
+    box.textContent = "Couldn't refresh from the Google Sheet: " + msg + ". Showing the last data that loaded successfully.";
+  }else{
+    box.style.display = "none";
+  }
+}
+
+let filtersWired = false;
+function wireFiltersOnce(){
+  if(filtersWired) return;
+  filtersWired = true;
+  ["searchBox","countryFilter","visaFilter","flightFilter"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", renderAttendeeTable);
+    document.getElementById(id).addEventListener("change", renderAttendeeTable);
+  });
+}
+
+async function refreshDashboard(isManual){
+  setSyncStatus("syncing", isManual ? "Refreshing" : "Syncing");
+  try{
+    await loadExcelData();
+    renderKPIs();
+    renderRouteNodes();
+    renderCountryTable();
+    renderChecklist();
+    renderAttendeeFilters();
+    renderAttendeeTable();
+    wireFiltersOnce();
+    document.getElementById("lastUpdated").textContent = new Date().toLocaleString(undefined,{dateStyle:"medium", timeStyle:"short"});
+    setSyncStatus("live", "Live");
+    showSyncError(null);
+  }catch(err){
+    console.error(err);
+    setSyncStatus("error", "Error");
+    showSyncError(err.message || "Unknown error");
+  }
+}
+
+async function init(){
+  document.getElementById("refreshBtn").addEventListener("click", ()=> refreshDashboard(true));
+  await refreshDashboard(false);
+  setInterval(()=> refreshDashboard(false), REFRESH_MS);
+}
+window.addEventListener("load", init);
+</script>
+</body>
+</html>
