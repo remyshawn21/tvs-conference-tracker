@@ -705,7 +705,7 @@ const SHEET_ID = '1pejTpcjDU_5QSYT-h7aZFNkBc52x_UR0v5Ydw-t1B5g';
 const SUMMARY_TAB = 'Sheet1';
 const ATTENDEES_TAB = 'Attendees';
 const CHECKLIST_TAB = 'Checklist';
-const REFRESH_MS = 30000;
+const REFRESH_MS = 3600000;
 
 function gvizUrl(sheetName, callbackName, headerRows){
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName};reqId:0&sheet=${encodeURIComponent(sheetName)}&headers=${headerRows}`;
