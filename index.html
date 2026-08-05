@@ -181,7 +181,7 @@
 
   .nav-cards{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
     gap:16px;
     margin-bottom:36px;
   }
@@ -573,6 +573,14 @@
         <div class="nav-card-stat" id="navStatChecklist">—</div>
         <div class="nav-card-sub">items done</div>
       </button>
+      <button class="nav-card" data-view="travel" type="button">
+        <div class="nav-card-top">
+          <span class="nav-card-label">Travel &amp; Stay</span>
+          <span class="nav-card-arrow">→</span>
+        </div>
+        <div class="nav-card-stat" id="navStatTravel">—</div>
+        <div class="nav-card-sub">travellers logged</div>
+      </button>
     </div>
   </div>
 
@@ -673,6 +681,35 @@
     </div>
   </div>
 
+  <!-- TRAVEL & STAY -->
+  <div class="panel view-detail" id="view-travel" style="display:none;">
+    <button class="back-btn" data-back type="button">← Back to Overview</button>
+    <div class="panel-head">
+      <h2>Travel &amp; Stay</h2>
+    </div>
+    <p class="panel-note">Arrival and departure flights, plus Bengaluru hotel check-in/check-out, as logged in the "Arrival and Stay" sheet.</p>
+    <div class="kpi-row" id="travelKpiRow" style="margin-bottom:18px;"></div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Country</th>
+          <th>Dealer / Distributor</th>
+          <th>Arrival Flight</th>
+          <th>Arrival</th>
+          <th>Check In</th>
+          <th>Check Out</th>
+          <th>Departure Flight</th>
+          <th>Departure</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody id="travelBody"></tbody>
+    </table>
+    </div>
+  </div>
+
 </div>
 
 <footer id="siteFooter">
@@ -695,6 +732,7 @@
 let COUNTRY_DATA=[];
 let ATTENDEES=[];
 let CHECKLIST=[];
+let TRAVEL=[];
 
 /* ------------------------------------------------------------------------
    SOURCE — Google Sheet, shared as "Anyone with the link — Viewer".
@@ -707,6 +745,7 @@ const SHEET_ID = '1pejTpcjDU_5QSYT-h7aZFNkBc52x_UR0v5Ydw-t1B5g';
 const SUMMARY_TAB = 'Sheet1';
 const ATTENDEES_TAB = 'Attendees';
 const CHECKLIST_TAB = 'Checklist';
+const TRAVEL_TAB = 'Arrival and Stay';
 const REFRESH_MS = 3600000; // auto-refresh once every hour; the button still refreshes on demand
 
 function gvizUrl(sheetName, callbackName, headerRows){
@@ -773,11 +812,19 @@ function gvizRowsAsObjects(response){
   });
 }
 
+// For sheets with merged/duplicate header rows (e.g. "Flight Details" appearing
+// twice for arrival + departure) — reads by column position instead of by label,
+// skipping the given number of leading header rows.
+function gvizRowsPositional(response, skipRows){
+  return (response.table.rows||[]).slice(skipRows).map(row => (row.c||[]).map(cell => gvizCellText(cell)));
+}
+
 async function loadExcelData(){
- const [summaryResp, attendeesResp, checklistResp] = await Promise.all([
+ const [summaryResp, attendeesResp, checklistResp, travelResp] = await Promise.all([
    loadGvizJSONP(SUMMARY_TAB, 0),
    loadGvizJSONP(ATTENDEES_TAB, 1),
-   loadGvizJSONP(CHECKLIST_TAB, 1).catch(err=>{ console.warn('Checklist tab:', err.message); return null; })
+   loadGvizJSONP(CHECKLIST_TAB, 1).catch(err=>{ console.warn('Checklist tab:', err.message); return null; }),
+   loadGvizJSONP(TRAVEL_TAB, 0).catch(err=>{ console.warn('Arrival and Stay tab:', err.message); return null; })
  ]);
 
  ATTENDEES = gvizRowsAsObjects(attendeesResp).map(r=>({
@@ -796,6 +843,26 @@ async function loadExcelData(){
    owner: r['Owner']||'',
    status: r['Status']||''
  })).filter(r=>r.item) : [];
+
+ // Columns, by position: Slno, Name, Country, Dealer/Distributor,
+ // Arrival Flight, Arrival Date, Arrival Time, Check In, Check Out,
+ // Departure Flight, Departure Date, Departure Time, Remarks
+ TRAVEL = travelResp ? gvizRowsPositional(travelResp, 2)
+   .filter(r => r[1])
+   .map(r=>({
+     name: r[1]||'',
+     country: r[2]||'',
+     dealerDistributor: r[3]||'',
+     arrivalFlight: r[4]||'',
+     arrivalDate: r[5]||'',
+     arrivalTime: r[6]||'',
+     checkIn: r[7]||'',
+     checkOut: r[8]||'',
+     departureFlight: r[9]||'',
+     departureDate: r[10]||'',
+     departureTime: r[11]||'',
+     remarks: r[12]||''
+   })) : [];
 
  const rows = gvizRowsAsArrays(summaryResp);
  COUNTRY_DATA=[];
@@ -1109,6 +1176,40 @@ function renderChecklist(){
     </tr>`).join("") || `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:24px;">No checklist items found.</td></tr>`;
 }
 
+function renderTravel(){
+  const total = TRAVEL.length;
+  const arrivalLogged = TRAVEL.filter(t=>t.arrivalFlight).length;
+  const departureLogged = TRAVEL.filter(t=>t.departureFlight).length;
+  const missingEither = TRAVEL.filter(t=>!t.arrivalFlight || !t.departureFlight).length;
+
+  const cards = [
+    { label:"Travellers Logged", value:total, sub:"in Arrival & Stay sheet", accent:true },
+    { label:"Arrival Flights Logged", value:arrivalLogged, sub:pct(arrivalLogged,total)+"% of travellers" },
+    { label:"Departure Flights Logged", value:departureLogged, sub:pct(departureLogged,total)+"% of travellers" },
+    { label:"Missing a Flight Leg", value:missingEither, sub:"needs arrival or departure info" },
+  ];
+  document.getElementById("travelKpiRow").innerHTML = cards.map(c=>`
+    <div class="kpi-card ${c.accent?"accent":""}">
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>`).join("");
+
+  document.getElementById("travelBody").innerHTML = TRAVEL.map(t=>`
+    <tr>
+      <td><div class="name-cell"><span class="avatar">${initials(t.name)}</span>${t.name}</div></td>
+      <td>${t.country||"–"}</td>
+      <td>${t.dealerDistributor||"–"}</td>
+      <td>${t.arrivalFlight||"–"}</td>
+      <td>${[t.arrivalDate,t.arrivalTime].filter(Boolean).join(" · ")||"–"}</td>
+      <td>${t.checkIn||"–"}</td>
+      <td>${t.checkOut||"–"}</td>
+      <td>${t.departureFlight||"–"}</td>
+      <td>${[t.departureDate,t.departureTime].filter(Boolean).join(" · ")||"–"}</td>
+      <td>${t.remarks||"–"}</td>
+    </tr>`).join("") || `<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);padding:24px;">No travel records found yet.</td></tr>`;
+}
+
 function setSyncStatus(mode, text){
   const chip = document.getElementById("syncStatus");
   chip.className = "status-chip " + mode;
@@ -1135,13 +1236,14 @@ function wireFiltersOnce(){
   });
 }
 
-const VALID_VIEWS = ["home","countries","attendees","checklist"];
+const VALID_VIEWS = ["home","countries","attendees","checklist","travel"];
 
 function renderNavStats(){
   document.getElementById("navStatCountries").textContent = COUNTRY_DATA.length;
   document.getElementById("navStatAttendees").textContent = ATTENDEES.length;
   const done = CHECKLIST.filter(c=>checklistStatusTone(c.status)==="good").length;
   document.getElementById("navStatChecklist").textContent = `${done}/${CHECKLIST.length}`;
+  document.getElementById("navStatTravel").textContent = TRAVEL.length;
 }
 
 function showView(view, pushHash){
@@ -1150,6 +1252,7 @@ function showView(view, pushHash){
   document.getElementById("view-countries").style.display = (view==="countries") ? "" : "none";
   document.getElementById("view-attendees").style.display = (view==="attendees") ? "" : "none";
   document.getElementById("view-checklist").style.display = (view==="checklist") ? "" : "none";
+  document.getElementById("view-travel").style.display = (view==="travel") ? "" : "none";
   document.getElementById("siteFooter").style.display = (view==="home") ? "" : "none";
   if(pushHash!==false){
     const target = view==="home" ? "#" : "#"+view;
@@ -1178,6 +1281,7 @@ async function refreshDashboard(isManual){
     renderRouteNodes();
     renderCountryTable();
     renderChecklist();
+    renderTravel();
     renderAttendeeFilters();
     renderAttendeeTable();
     renderGenderSplit();
