@@ -825,6 +825,14 @@ function gvizRowsAsArrays(response){
 const GVIZ_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function gvizCellText(cell){
   if(!cell) return '';
+  // Prefer the sheet's own formatted display text — this already reflects
+  // whatever format the cell has (date, time, or datetime) exactly as shown
+  // in Google Sheets. Falling back to raw cell.v date-parsing below is only
+  // for the rare case where no formatted string is available; parsing v
+  // directly is unreliable for time-only cells, which Sheets stores as a
+  // "date" of 30 Dec 1899 internally — that path used to show times like
+  // "08:10" as "30 Dec 1899" because it only ever read the date portion.
+  if(cell.f!=null && cell.f !== '') return cell.f;
   if(cell.v!=null && typeof cell.v === 'string'){
     const m = cell.v.match(/^Date\((\d+),(\d+),(\d+)/);
     if(m){
@@ -832,7 +840,6 @@ function gvizCellText(cell){
       return `${String(d).padStart(2,'0')} ${GVIZ_MONTHS[mo]||''} ${y}`;
     }
   }
-  if(cell.f!=null) return cell.f;
   return cell.v!=null ? cell.v : '';
 }
 function gvizRowsAsObjects(response){
@@ -1009,7 +1016,7 @@ function renderRouteNodes(){
   const g = document.getElementById("routeNodes");
   let html = "";
   for(let i=0;i<n;i++){
-    const dist = (i/(n-1)) * totalLen;
+    const dist = n>1 ? (i/(n-1)) * totalLen : totalLen/2;
     const pt = pathEl.getPointAtLength(dist);
     html += `<circle class="route-node-ring" cx="${pt.x}" cy="${pt.y}" r="5"></circle>
              <circle class="route-node" cx="${pt.x}" cy="${pt.y}" r="2.4"></circle>`;
