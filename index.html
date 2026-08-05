@@ -280,6 +280,7 @@
   }
   .kpi-card.accent{background:var(--tvs-red); color:#fff;}
   .kpi-card.accent .kpi-label,.kpi-card.accent .kpi-sub{color:rgba(255,255,255,0.85);}
+  .kpi-row.kpi-row--panel{margin:0 0 20px;}
 
   /* ---------- COUNTRY TABLE ---------- */
   .panel{
@@ -400,6 +401,21 @@
     color:var(--ink);
   }
   .filter-bar input{flex:1; min-width:180px;}
+  .filter-bar .btn-outline{
+    font-family:var(--font-body);
+    font-size:12.5px;
+    font-weight:700;
+    padding:8px 16px;
+    border-radius:8px;
+    border:1px solid var(--tvs-red);
+    background:#fff;
+    color:var(--tvs-red-dark);
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background 0.15s, color 0.15s;
+  }
+  .filter-bar .btn-outline:hover{background:var(--tvs-red); color:#fff;}
+  .filter-bar .btn-outline:active{transform:scale(0.97);}
 
   .chip{
     display:inline-flex;
@@ -624,7 +640,7 @@
     Dashboard is reading directly from the conference tracker workbook.
   </div>
 </div>
-    <div class="kpi-row" id="genderKpiRow" style="margin:0 0 18px;"></div>
+    <div class="kpi-row kpi-row--panel" id="genderKpiRow"></div>
     <div class="filter-bar">
       <input type="text" id="searchBox" placeholder="Search name, company or country…">
       <select id="countryFilter"><option value="">All countries</option></select>
@@ -666,7 +682,7 @@
     <div class="panel-head">
       <h2>Planning Checklist</h2>
     </div>
-    <div class="kpi-row" id="checklistKpiRow" style="margin-bottom:18px;"></div>
+    <div class="kpi-row kpi-row--panel" id="checklistKpiRow"></div>
     <div style="overflow-x:auto;">
     <table>
       <thead>
@@ -688,7 +704,21 @@
       <h2>Travel &amp; Stay</h2>
     </div>
     <p class="panel-note">Arrival and departure flights, plus Bengaluru hotel check-in/check-out, as logged in the "Arrival and Stay" sheet.</p>
-    <div class="kpi-row" id="travelKpiRow" style="margin-bottom:18px;"></div>
+    <div class="kpi-row kpi-row--panel" id="travelKpiRow"></div>
+    <div class="filter-bar">
+      <input type="text" id="travelSearchBox" placeholder="Search name, country or dealer…">
+      <select id="travelCountryFilter"><option value="">All countries</option></select>
+      <select id="travelStatusFilter">
+        <option value="">All statuses</option>
+        <option value="Complete">Complete (both legs logged)</option>
+        <option value="Missing Arrival">Missing arrival</option>
+        <option value="Missing Departure">Missing departure</option>
+        <option value="Missing Both">Missing both legs</option>
+      </select>
+      <button class="btn-outline" id="exportAllBtn" type="button">⇩ Export All</button>
+      <button class="btn-outline" id="exportBlanksBtn" type="button">⇩ Export Blanks Only</button>
+    </div>
+    <p class="panel-note" id="travelResultCount"></p>
     <div style="overflow-x:auto;">
     <table>
       <thead>
@@ -696,6 +726,7 @@
           <th>Name</th>
           <th>Country</th>
           <th>Dealer / Distributor</th>
+          <th>Status</th>
           <th>Arrival Flight</th>
           <th>Arrival</th>
           <th>Check In</th>
@@ -723,6 +754,7 @@
   </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* =========================================================================
    DATA — edit these two arrays and refresh the page to update the dashboard.
@@ -847,7 +879,10 @@ async function loadExcelData(){
  // Columns, by position: Slno, Name, Country, Dealer/Distributor,
  // Arrival Flight, Arrival Date, Arrival Time, Check In, Check Out,
  // Departure Flight, Departure Date, Departure Time, Remarks
- TRAVEL = travelResp ? gvizRowsPositional(travelResp, 2)
+ // Sheet now has a single header row: Slno, Name, Country, Dealer / Distributor,
+ // Arrival Flight Details, Date, Time, Check In, Check out, Departure Flight
+ // Details, Date, Time, Remarks — read by position since "Date"/"Time" repeat.
+ TRAVEL = travelResp ? gvizRowsPositional(travelResp, 1)
    .filter(r => r[1])
    .map(r=>({
      name: r[1]||'',
@@ -1176,16 +1211,52 @@ function renderChecklist(){
     </tr>`).join("") || `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:24px;">No checklist items found.</td></tr>`;
 }
 
+function travelStatus(t){
+  const hasArrival = !!(t.arrivalFlight && t.arrivalFlight.trim());
+  const hasDeparture = !!(t.departureFlight && t.departureFlight.trim());
+  if(hasArrival && hasDeparture) return "Complete";
+  if(!hasArrival && !hasDeparture) return "Missing Both";
+  if(!hasArrival) return "Missing Arrival";
+  return "Missing Departure";
+}
+function travelStatusTone(status){
+  if(status==="Complete") return "good";
+  if(status==="Missing Both") return "bad";
+  return "warn";
+}
+
+function filteredTravel(){
+  const search = (document.getElementById("travelSearchBox").value||"").toLowerCase();
+  const countryF = document.getElementById("travelCountryFilter").value;
+  const statusF = document.getElementById("travelStatusFilter").value;
+  return TRAVEL.filter(t=>{
+    const matchesSearch = !search || (t.name+t.country+t.dealerDistributor).toLowerCase().includes(search);
+    const matchesCountry = !countryF || t.country===countryF;
+    const matchesStatus = !statusF || travelStatus(t)===statusF;
+    return matchesSearch && matchesCountry && matchesStatus;
+  });
+}
+
+function renderTravelFilters(){
+  const sel = document.getElementById("travelCountryFilter");
+  const current = sel.value;
+  const countries = [...new Set(TRAVEL.map(t=>t.country))].filter(Boolean).sort();
+  sel.innerHTML = `<option value="">All countries</option>` + countries.map(c=>`<option value="${c}">${c}</option>`).join("");
+  if(countries.includes(current)) sel.value = current;
+}
+
 function renderTravel(){
   const total = TRAVEL.length;
-  const arrivalLogged = TRAVEL.filter(t=>t.arrivalFlight).length;
-  const departureLogged = TRAVEL.filter(t=>t.departureFlight).length;
-  const missingEither = TRAVEL.filter(t=>!t.arrivalFlight || !t.departureFlight).length;
+  const rows = filteredTravel();
+  const shown = rows.length;
+  const arrivalLogged = rows.filter(t=>travelStatus(t)==="Complete" || travelStatus(t)==="Missing Departure").length;
+  const departureLogged = rows.filter(t=>travelStatus(t)==="Complete" || travelStatus(t)==="Missing Arrival").length;
+  const missingEither = rows.filter(t=>travelStatus(t)!=="Complete").length;
 
   const cards = [
-    { label:"Travellers Logged", value:total, sub:"in Arrival & Stay sheet", accent:true },
-    { label:"Arrival Flights Logged", value:arrivalLogged, sub:pct(arrivalLogged,total)+"% of travellers" },
-    { label:"Departure Flights Logged", value:departureLogged, sub:pct(departureLogged,total)+"% of travellers" },
+    { label:"Travellers Shown", value:shown, sub:shown===total ? "of "+total+" total" : `of ${total} total (filtered)`, accent:true },
+    { label:"Arrival Flights Logged", value:arrivalLogged, sub:pct(arrivalLogged,shown)+"% of shown" },
+    { label:"Departure Flights Logged", value:departureLogged, sub:pct(departureLogged,shown)+"% of shown" },
     { label:"Missing a Flight Leg", value:missingEither, sub:"needs arrival or departure info" },
   ];
   document.getElementById("travelKpiRow").innerHTML = cards.map(c=>`
@@ -1195,11 +1266,17 @@ function renderTravel(){
       <div class="kpi-sub">${c.sub}</div>
     </div>`).join("");
 
-  document.getElementById("travelBody").innerHTML = TRAVEL.map(t=>`
+  document.getElementById("travelResultCount").textContent =
+    shown===total ? `Showing all ${total} travellers.` : `Showing ${shown} of ${total} travellers.`;
+
+  document.getElementById("travelBody").innerHTML = rows.map(t=>{
+    const status = travelStatus(t);
+    return `
     <tr>
       <td><div class="name-cell"><span class="avatar">${initials(t.name)}</span>${t.name}</div></td>
       <td>${t.country||"–"}</td>
       <td>${t.dealerDistributor||"–"}</td>
+      <td><span class="status-pill ${travelStatusTone(status)}">${status}</span></td>
       <td>${t.arrivalFlight||"–"}</td>
       <td>${[t.arrivalDate,t.arrivalTime].filter(Boolean).join(" · ")||"–"}</td>
       <td>${t.checkIn||"–"}</td>
@@ -1207,7 +1284,41 @@ function renderTravel(){
       <td>${t.departureFlight||"–"}</td>
       <td>${[t.departureDate,t.departureTime].filter(Boolean).join(" · ")||"–"}</td>
       <td>${t.remarks||"–"}</td>
-    </tr>`).join("") || `<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);padding:24px;">No travel records found yet.</td></tr>`;
+    </tr>`;
+  }).join("") || `<tr><td colspan="11" style="text-align:center;color:var(--ink-soft);padding:24px;">No travel records match those filters.</td></tr>`;
+}
+
+function exportTravel(mode){
+  let rows = filteredTravel();
+  if(mode==="blanks"){
+    rows = rows.filter(t=>travelStatus(t)!=="Complete");
+  }
+  if(!rows.length){
+    alert("No rows to export for the current filters.");
+    return;
+  }
+  const data = rows.map(t=>({
+    "Name": t.name,
+    "Country": t.country,
+    "Dealer / Distributor": t.dealerDistributor,
+    "Status": travelStatus(t),
+    "Arrival Flight": t.arrivalFlight,
+    "Arrival Date": t.arrivalDate,
+    "Arrival Time": t.arrivalTime,
+    "Check In": t.checkIn,
+    "Check Out": t.checkOut,
+    "Departure Flight": t.departureFlight,
+    "Departure Date": t.departureDate,
+    "Departure Time": t.departureTime,
+    "Remarks": t.remarks
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws["!cols"] = [ {wch:24},{wch:16},{wch:22},{wch:16},{wch:26},{wch:12},{wch:10},{wch:10},{wch:10},{wch:26},{wch:12},{wch:10},{wch:28} ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Travel & Stay");
+  const stamp = new Date().toISOString().slice(0,10);
+  const fname = mode==="blanks" ? `TVS_Travel_FollowUp_${stamp}.xlsx` : `TVS_Travel_Export_${stamp}.xlsx`;
+  XLSX.writeFile(wb, fname);
 }
 
 function setSyncStatus(mode, text){
@@ -1234,6 +1345,12 @@ function wireFiltersOnce(){
     document.getElementById(id).addEventListener("input", renderAttendeeTable);
     document.getElementById(id).addEventListener("change", renderAttendeeTable);
   });
+  ["travelSearchBox","travelCountryFilter","travelStatusFilter"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", renderTravel);
+    document.getElementById(id).addEventListener("change", renderTravel);
+  });
+  document.getElementById("exportAllBtn").addEventListener("click", ()=> exportTravel("all"));
+  document.getElementById("exportBlanksBtn").addEventListener("click", ()=> exportTravel("blanks"));
 }
 
 const VALID_VIEWS = ["home","countries","attendees","checklist","travel"];
@@ -1281,6 +1398,7 @@ async function refreshDashboard(isManual){
     renderRouteNodes();
     renderCountryTable();
     renderChecklist();
+    renderTravelFilters();
     renderTravel();
     renderAttendeeFilters();
     renderAttendeeTable();
