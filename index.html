@@ -616,6 +616,7 @@
     Dashboard is reading directly from the conference tracker workbook.
   </div>
 </div>
+    <div class="kpi-row" id="genderKpiRow" style="margin:0 0 18px;"></div>
     <div class="filter-bar">
       <input type="text" id="searchBox" placeholder="Search name, company or country…">
       <select id="countryFilter"><option value="">All countries</option></select>
@@ -640,6 +641,7 @@
           <th>Country</th>
           <th>Company / Dealer</th>
           <th>Role</th>
+          <th>Gender</th>
           <th>Visa Status</th>
           <th>Flight Status</th>
           <th>Flight Date</th>
@@ -705,7 +707,7 @@ const SHEET_ID = '1pejTpcjDU_5QSYT-h7aZFNkBc52x_UR0v5Ydw-t1B5g';
 const SUMMARY_TAB = 'Sheet1';
 const ATTENDEES_TAB = 'Attendees';
 const CHECKLIST_TAB = 'Checklist';
-const REFRESH_MS = 3600000;
+const REFRESH_MS = 3600000; // auto-refresh once every hour; the button still refreshes on demand
 
 function gvizUrl(sheetName, callbackName, headerRows){
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName};reqId:0&sheet=${encodeURIComponent(sheetName)}&headers=${headerRows}`;
@@ -783,6 +785,7 @@ async function loadExcelData(){
    country:r['Country']||'',
    company:r['Company']||'',
    role:r['Role']||'',
+   gender:r['Gender']||'',
    visa:r['Visa Status']||'',
    flight:r['Flight Status']||'',
    flightDate:r['Flight Date']||''
@@ -1008,6 +1011,35 @@ function flightChipTone(v){
   return v==="Booked" ? "good" : "neutral";
 }
 
+function genderLabel(g){
+  const s = (g||"").trim().toLowerCase();
+  if(s==="m" || s==="male") return "Male";
+  if(s==="f" || s==="female") return "Female";
+  return (g||"").trim();
+}
+
+function renderGenderSplit(){
+  const total = ATTENDEES.length;
+  const male = ATTENDEES.filter(a=>genderLabel(a.gender)==="Male").length;
+  const female = ATTENDEES.filter(a=>genderLabel(a.gender)==="Female").length;
+  const unspecified = total - male - female;
+
+  const cards = [
+    { label:"Male", value:male, sub:pct(male,total)+"% of attendees", accent:true },
+    { label:"Female", value:female, sub:pct(female,total)+"% of attendees" },
+  ];
+  if(unspecified > 0){
+    cards.push({ label:"Unspecified", value:unspecified, sub:pct(unspecified,total)+"% of attendees" });
+  }
+
+  document.getElementById("genderKpiRow").innerHTML = cards.map(c=>`
+    <div class="kpi-card ${c.accent?"accent":""}">
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>`).join("");
+}
+
 function renderAttendeeFilters(){
   const sel = document.getElementById("countryFilter");
   const countries = [...new Set(ATTENDEES.map(a=>a.country))].sort();
@@ -1034,10 +1066,11 @@ function renderAttendeeTable(){
       <td>${a.country}</td>
       <td>${a.company}</td>
       <td><span class="role-tag">${a.role}</span></td>
+      <td>${genderLabel(a.gender)||"–"}</td>
       <td><span class="chip ${visaChipTone(a.visa)}">${a.visa}</span></td>
       <td><span class="chip ${flightChipTone(a.flight)}">${a.flight}</span></td>
       <td>${a.flightDate||"–"}</td>
-    </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:24px;">No attendees match those filters.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);padding:24px;">No attendees match those filters.</td></tr>`;
 }
 
 function checklistStatusTone(v){
@@ -1147,6 +1180,7 @@ async function refreshDashboard(isManual){
     renderChecklist();
     renderAttendeeFilters();
     renderAttendeeTable();
+    renderGenderSplit();
     renderNavStats();
     wireFiltersOnce();
     document.getElementById("lastUpdated").textContent = new Date().toLocaleString(undefined,{dateStyle:"medium", timeStyle:"short"});
