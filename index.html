@@ -858,6 +858,16 @@ function gvizRowsPositional(response, skipRows){
   return (response.table.rows||[]).slice(skipRows).map(row => (row.c||[]).map(cell => gvizCellText(cell)));
 }
 
+// Normalizes names like "MATSUMOTO YOSHIKAZU" or "susan o'reilly" into
+// "Matsumoto Yoshikazu" / "Susan O'Reilly" — capitalizes after spaces,
+// hyphens, and apostrophes so compound/possessive names stay correct.
+// Note: short all-caps initials (e.g. "BK Nagendra") will become "Bk" —
+// there's no reliable way to tell an initialism from a name automatically.
+function toProperCase(str){
+  if(!str) return str;
+  return str.trim().toLowerCase().replace(/(^|[\s'-])([a-z])/g, (m, sep, chr) => sep + chr.toUpperCase());
+}
+
 async function loadExcelData(){
  const [summaryResp, attendeesResp, checklistResp, travelResp] = await Promise.all([
    loadGvizJSONP(SUMMARY_TAB, 0),
@@ -867,7 +877,7 @@ async function loadExcelData(){
  ]);
 
  ATTENDEES = gvizRowsAsObjects(attendeesResp).map(r=>({
-   name:r['Name']||'',
+   name:toProperCase(r['Name']||''),
    country:r['Country']||'',
    company:r['Company']||'',
    role:r['Role']||'',
@@ -892,7 +902,7 @@ async function loadExcelData(){
  TRAVEL = travelResp ? gvizRowsPositional(travelResp, 1)
    .filter(r => r[1])
    .map(r=>({
-     name: r[1]||'',
+     name: toProperCase(r[1]||''),
      country: r[2]||'',
      dealerDistributor: r[3]||'',
      arrivalFlight: r[4]||'',
